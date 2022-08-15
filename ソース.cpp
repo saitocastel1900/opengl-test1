@@ -13,6 +13,12 @@ int main()
 		return 1;
 	}
 
+	//opengl 3.2を使ってみる
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT,GL_TRUE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
+
 	//ウィンドウを作成する
 	GLFWwindow* const window(glfwCreateWindow(640, 480, "HelloWolrd", NULL, NULL));
 	if (window==NULL)
@@ -29,6 +35,18 @@ int main()
 
 	//作成したウィンドウをOpenGLの処理対象にする
 	glfwMakeContextCurrent(window);
+
+	//GLEW
+	glewExperimental = GL_TRUE;
+	if (glewInit()!=GLEW_OK)
+	{
+		//GLEWの初期化に失敗した
+		cerr << "GLEWの初期化に失敗しました" << endl;
+		return 1;
+	}
+
+	//カラーバッファの入れ替えタイミングを指定
+	glfwSwapInterval(1);
 
 	//背景色の設定（マゼンタ,RGBA）
 	glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
