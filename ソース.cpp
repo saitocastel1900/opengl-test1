@@ -1,68 +1,181 @@
-#include <cstdlib>
+ï»¿#include <cstdlib>
 #include<iostream>
+#include<fstream>
 #include <GL/glew.h>
+#include<vector>
 #include <GLFW/glfw3.h>
 using namespace std;
 
+
+// ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ãƒªãƒ³ã‚¯çµæœã‚’è¡¨ç¤ºã™ã‚‹
+// program: ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆå
+GLboolean printProgramInfoLog(GLuint program)
+{
+	// ãƒªãƒ³ã‚¯çµæœã‚’å–å¾—ã™ã‚‹
+	GLint status;
+	glGetProgramiv(program, GL_LINK_STATUS, &status);
+	if (status == GL_FALSE) std::cerr << "Link Error." << std::endl;
+	// ã‚·ã‚§ãƒ¼ãƒ€ã®ãƒªãƒ³ã‚¯æ™‚ã®ãƒ­ã‚°ã®é•·ã•ã‚’å–å¾—ã™ã‚‹
+	GLsizei bufSize;
+	glGetProgramiv(program, GL_INFO_LOG_LENGTH, &bufSize);
+	if (bufSize > 1)
+	{
+		// ã‚·ã‚§ãƒ¼ãƒ€ã®ãƒªãƒ³ã‚¯æ™‚ã®ãƒ­ã‚°ã®å†…å®¹ã‚’å–å¾—ã™ã‚‹
+		std::vector<GLchar> infoLog(bufSize);
+		GLsizei length;
+		glGetProgramInfoLog(program, bufSize, &length, &infoLog[0]);
+		std::cerr << &infoLog[0] << std::endl;
+	}
+	return static_cast<GLboolean>(status);
+}
+
+/// <summary>
+/// 
+/// </summary>
+/// <param name="shader"></param>
+/// <param name="str"></param>
+/// <returns></returns>
+GLboolean printShaderInfoLog(GLuint shader,const char *str)
+{
+	GLint status;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+	if (status==GL_FALSE)
+	{
+		cerr << "ã‚³ãƒ³ãƒ‘ã‚¤ãƒ©ã‚¨ãƒ©ãƒ¼ã§ã™" << str << endl;
+	}
+	// ã‚·ã‚§ãƒ¼ãƒ€ã®ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«æ™‚ã®ãƒ­ã‚°ã®é•·ã•ã‚’å–å¾—ã™ã‚‹
+	GLsizei bufSize;
+	glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &bufSize);
+	if (bufSize > 1)
+	{
+		// ã‚·ã‚§ãƒ¼ãƒ€ã®ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«æ™‚ã®ãƒ­ã‚°ã®å†…å®¹ã‚’å–å¾—ã™ã‚‹
+		std::vector<GLchar> infoLog(bufSize);
+		GLsizei length;
+		glGetShaderInfoLog(shader, bufSize, &length, &infoLog[0]);
+		std::cerr << &infoLog[0] << std::endl;
+	}
+	return static_cast<GLboolean>(status);
+}
+
+
+/// <summary>
+/// 
+/// </summary>
+/// <param name="vsrc"></param>
+/// <param name="fsrc"></param>
+/// <returns></returns>
+GLuint createProgram(const char* vsrc, const char* fsrc)
+{
+	const GLuint program(glCreateProgram());
+
+	if (vsrc != NULL)
+	{
+		const GLuint vobj(glCreateShader(GL_VERTEX_SHADER));
+		glShaderSource(vobj, 1, &vsrc, NULL);
+		glCompileShader(vobj);
+
+		if (printShaderInfoLog(vobj, "vertex shader"))glAttachShader(program, vobj);
+		glDeleteShader(vobj);
+	}
+
+		if (fsrc!=NULL) 
+		{
+			const GLuint fobj(glCreateShader(GL_FRAGMENT_SHADER));
+			glShaderSource(fobj,1,&fsrc,NULL);
+			glCompileShader(fobj);
+
+			if (printShaderInfoLog(fobj, "fragment shader"))glAttachShader(program,fobj);
+			glDeleteShader(fobj);
+		}
+
+		glBindAttribLocation(program,0,"position");
+		glBindFragDataLocation(program,0,"fragment");
+		glLinkProgram(program);
+
+		if (printProgramInfoLog(program))return program;
+
+		glDeleteProgram(program);
+		return 0;
+	}
+
+
 int main()
 {
-	//glfwInit‚ğg—p‚·‚é‚±‚Æ‚ÅOpenGL‚ğg‚¤€”õ‚ªs‚í‚ê‚é
+	//glfwInitã‚’ä½¿ç”¨ã™ã‚‹ã“ã¨ã§OpenGLã‚’ä½¿ã†æº–å‚™ãŒè¡Œã‚ã‚Œã‚‹
 	if (glfwInit() == GL_FALSE)
 	{
-		cerr << "‰Šú‰»‚É¸”s‚µ‚½" << endl;
+		cerr << "åˆæœŸåŒ–ã«å¤±æ•—ã—ãŸ" << endl;
 		return 1;
 	}
 
-	//opengl 3.2‚ğg‚Á‚Ä‚İ‚é
+	//opengl 3.2ã‚’ä½¿ã£ã¦ã¿ã‚‹
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT,GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
 
-	//ƒEƒBƒ“ƒhƒE‚ğì¬‚·‚é
+	//ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’ä½œæˆã™ã‚‹
 	GLFWwindow* const window(glfwCreateWindow(640, 480, "HelloWolrd", NULL, NULL));
 	if (window==NULL)
 	{
-		//ƒEƒBƒ“ƒhƒE‚ªì¬o—ˆ‚È‚©‚Á‚½
-		cerr << "ƒEƒBƒ“ƒhƒE‚Ìì¬‚ªo—ˆ‚Ü‚¹‚ñ‚Å‚µ‚½" << endl;
+		//ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãŒä½œæˆå‡ºæ¥ãªã‹ã£ãŸ
+		cerr << "ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®ä½œæˆãŒå‡ºæ¥ã¾ã›ã‚“ã§ã—ãŸ" << endl;
 		return 1;
 	}
 
-	//ƒvƒƒOƒ‰ƒ€I—¹‚É•K‚¸glfwTerminate‚ªÀs‚³‚ê‚é
-	//I—¹’¼‘O‚ÉglfwTerminate‚ğÀs‚·‚é•K—v‚ª‚ ‚é‚ªA‚·‚×‚Ä‚É’Ç‰Á‚·‚é‚Ì‚ª‚ß‚ñ‚Ç‚¢‚½‚ßatexit‚Å“o˜^
-	//glfwTerminate‚ÍI—¹ˆ—‚ğs‚¤ŠÖ”(‰Šú‰»‘O‚É–ß‚·)
+	//ãƒ—ãƒ­ã‚°ãƒ©ãƒ çµ‚äº†æ™‚ã«å¿…ãšglfwTerminateãŒå®Ÿè¡Œã•ã‚Œã‚‹
+	//çµ‚äº†ç›´å‰ã«glfwTerminateã‚’å®Ÿè¡Œã™ã‚‹å¿…è¦ãŒã‚ã‚‹ãŒã€ã™ã¹ã¦ã«è¿½åŠ ã™ã‚‹ã®ãŒã‚ã‚“ã©ã„ãŸã‚atexitã§ç™»éŒ²
+	//glfwTerminateã¯çµ‚äº†å‡¦ç†ã‚’è¡Œã†é–¢æ•°(åˆæœŸåŒ–å‰ã«æˆ»ã™)
 	atexit(glfwTerminate);
 
-	//ì¬‚µ‚½ƒEƒBƒ“ƒhƒE‚ğOpenGL‚Ìˆ—‘ÎÛ‚É‚·‚é
+	//ä½œæˆã—ãŸã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’OpenGLã®å‡¦ç†å¯¾è±¡ã«ã™ã‚‹
 	glfwMakeContextCurrent(window);
 
 	//GLEW
 	glewExperimental = GL_TRUE;
 	if (glewInit()!=GLEW_OK)
 	{
-		//GLEW‚Ì‰Šú‰»‚É¸”s‚µ‚½
-		cerr << "GLEW‚Ì‰Šú‰»‚É¸”s‚µ‚Ü‚µ‚½" << endl;
+		//GLEWã®åˆæœŸåŒ–ã«å¤±æ•—ã—ãŸ
+		cerr << "GLEWã®åˆæœŸåŒ–ã«å¤±æ•—ã—ã¾ã—ãŸ" << endl;
 		return 1;
 	}
 
-	//ƒJƒ‰[ƒoƒbƒtƒ@‚Ì“ü‚ê‘Ö‚¦ƒ^ƒCƒ~ƒ“ƒO‚ğw’è
+	//ã‚«ãƒ©ãƒ¼ãƒãƒƒãƒ•ã‚¡ã®å…¥ã‚Œæ›¿ãˆã‚¿ã‚¤ãƒŸãƒ³ã‚°ã‚’æŒ‡å®š
 	glfwSwapInterval(1);
 
-	//”wŒiF‚Ìİ’èiƒ}ƒ[ƒ“ƒ^,RGBAj
+	//èƒŒæ™¯è‰²ã®è¨­å®šï¼ˆãƒã‚¼ãƒ³ã‚¿,RGBAï¼‰
 	glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
 
-	//ƒ‹[ƒv‚·‚é‚±‚Æ‚ÅAƒEƒBƒ“ƒhƒE‚ğ•Â‚¶‚È‚¢‚æ‚¤‚É‚µ‚Ä‚¢‚é
+	static constexpr GLchar vsrc[] =
+		"#version 150 core\n"
+		"in vec4 position;\n"
+		"void main()\n"
+		"{\n"
+		" gl_Position = position;\n"
+		"}\n";
+
+	static constexpr GLchar fsrc[] =
+		"#version 150 core\n"
+		"out vec4 fragment;\n"
+		"void main()\n"
+		"{\n"
+		" fragment = vec4(1.0, 0.0, 0.0, 1.0);\n"
+		"}\n";
+
+	const GLuint program(createProgram(vsrc, fsrc));
+
+	//ãƒ«ãƒ¼ãƒ—ã™ã‚‹ã“ã¨ã§ã€ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’é–‰ã˜ãªã„ã‚ˆã†ã«ã—ã¦ã„ã‚‹
 	while (glfwWindowShouldClose(window) == GL_FALSE)
 	{
-		// ƒEƒBƒ“ƒhƒE‚ğÁ‹‚·‚é(ƒtƒŒ[ƒ€ƒoƒbƒtƒ@‚ÌƒJƒ‰[ƒoƒbƒtƒ@)
-		//ƒEƒBƒ“ƒhƒE‚Ì“h‚è‚Â‚Ô‚µ
+		// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’æ¶ˆå»ã™ã‚‹(ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã®ã‚«ãƒ©ãƒ¼ãƒãƒƒãƒ•ã‚¡)
+		//ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®å¡—ã‚Šã¤ã¶ã—
 		glClear(GL_COLOR_BUFFER_BIT);
 		//
-		// ‚±‚±‚Å•`‰æˆ—‚ğs‚¤
-		//
-		// ƒJƒ‰[ƒoƒbƒtƒ@‚ğ“ü‚ê‘Ö‚¦‚éiƒ_ƒuƒ‹ƒoƒbƒtƒ@ƒŠƒ“ƒO:‚¿‚ç‚Â‚«‚ğ–h‚®j
+		// ã“ã“ã§æç”»å‡¦ç†ã‚’è¡Œã†
+		glUseProgram(program);
+		// ã‚«ãƒ©ãƒ¼ãƒãƒƒãƒ•ã‚¡ã‚’å…¥ã‚Œæ›¿ãˆã‚‹ï¼ˆãƒ€ãƒ–ãƒ«ãƒãƒƒãƒ•ã‚¡ãƒªãƒ³ã‚°:ã¡ã‚‰ã¤ãã‚’é˜²ãï¼‰
 		glfwSwapBuffers(window);
-		// ƒCƒxƒ“ƒg‚ğæ‚èo‚·
+		// ã‚¤ãƒ™ãƒ³ãƒˆã‚’å–ã‚Šå‡ºã™
 		glfwWaitEvents();
 	}
 
