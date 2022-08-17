@@ -12,7 +12,7 @@ public:
 	// 頂点属性
 	struct Vertex
 	{
-		// 位置
+		// 位置情報(x,y)
 		GLfloat position[2];
 	};
 	// コンストラクタ

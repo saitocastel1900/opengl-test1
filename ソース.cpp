@@ -5,6 +5,7 @@
 #include<vector>
 #include<memory>
 #include <GLFW/glfw3.h>
+#include"Window.h"
 #include"Shape.h"
 using namespace std;
 
@@ -37,11 +38,11 @@ GLboolean printProgramInfoLog(GLuint program)
 /// <param name="shader"></param>
 /// <param name="str"></param>
 /// <returns></returns>
-GLboolean printShaderInfoLog(GLuint shader,const char *str)
+GLboolean printShaderInfoLog(GLuint shader, const char* str)
 {
 	GLint status;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-	if (status==GL_FALSE)
+	if (status == GL_FALSE)
 	{
 		cerr << "コンパイラエラーです" << str << endl;
 	}
@@ -80,25 +81,25 @@ GLuint createProgram(const char* vsrc, const char* fsrc)
 		glDeleteShader(vobj);
 	}
 
-		if (fsrc!=NULL) 
-		{
-			const GLuint fobj(glCreateShader(GL_FRAGMENT_SHADER));
-			glShaderSource(fobj,1,&fsrc,NULL);
-			glCompileShader(fobj);
+	if (fsrc != NULL)
+	{
+		const GLuint fobj(glCreateShader(GL_FRAGMENT_SHADER));
+		glShaderSource(fobj, 1, &fsrc, NULL);
+		glCompileShader(fobj);
 
-			if (printShaderInfoLog(fobj, "fragment shader"))glAttachShader(program,fobj);
-			glDeleteShader(fobj);
-		}
-
-		glBindAttribLocation(program,0,"position");
-		glBindFragDataLocation(program,0,"fragment");
-		glLinkProgram(program);
-
-		if (printProgramInfoLog(program))return program;
-
-		glDeleteProgram(program);
-		return 0;
+		if (printShaderInfoLog(fobj, "fragment shader"))glAttachShader(program, fobj);
+		glDeleteShader(fobj);
 	}
+
+	glBindAttribLocation(program, 0, "position");
+	glBindFragDataLocation(program, 0, "fragment");
+	glLinkProgram(program);
+
+	if (printProgramInfoLog(program))return program;
+
+	glDeleteProgram(program);
+	return 0;
+}
 
 // シェーダのソースファイルを読み込んだメモリを返す
 // name: シェーダのソースファイル名
@@ -146,13 +147,14 @@ GLuint loadProgram(const char* vert, const char* frag)
 	// プログラムオブジェクトを作成する
 	return vstat && fstat ? createProgram(vsrc.data(), fsrc.data()) : 0;
 }
-// 矩形の頂点の位置
+
+// 頂点位置座標
 constexpr Object::Vertex rectangleVertex[] =
 {
-{ -0.5f, -0.5f },
-{ 0.5f, -0.5f },
-{ 0.5f, 0.5f },
-{ -0.5f, 0.5f }
+	{ -0.5f, -0.5f },
+	{ 0.5f, -0.5f },
+	{ 0.5f, 0.5f },
+	{ -0.5f, 0.5f }
 };
 
 
@@ -168,37 +170,11 @@ int main()
 	//opengl 3.2を使ってみる
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT,GL_TRUE);
-	glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	//ウィンドウを作成する
-	GLFWwindow* const window(glfwCreateWindow(640, 480, "HelloWolrd", NULL, NULL));
-	if (window==NULL)
-	{
-		//ウィンドウが作成出来なかった
-		cerr << "ウィンドウの作成が出来ませんでした" << endl;
-		return 1;
-	}
-
-	//プログラム終了時に必ずglfwTerminateが実行される
-	//終了直前にglfwTerminateを実行する必要があるが、すべてに追加するのがめんどいためatexitで登録
-	//glfwTerminateは終了処理を行う関数(初期化前に戻す)
-	atexit(glfwTerminate);
-
-	//作成したウィンドウをOpenGLの処理対象にする
-	glfwMakeContextCurrent(window);
-
-	//GLEW
-	glewExperimental = GL_TRUE;
-	if (glewInit()!=GLEW_OK)
-	{
-		//GLEWの初期化に失敗した
-		cerr << "GLEWの初期化に失敗しました" << endl;
-		return 1;
-	}
-
-	//カラーバッファの入れ替えタイミングを指定
-	glfwSwapInterval(1);
+	Window window;	
 
 	//背景色の設定（マゼンタ,RGBA）
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
@@ -225,8 +201,14 @@ int main()
 
 	const GLuint program(loadProgram("point.vert", "point.frag"));
 
+	// uniform 変数の場所を取得する
+	//const GLint aspectLoc(glGetUniformLocation(program, "aspect"));
+	const GLint sizeLoc(glGetUniformLocation(program, "size"));
+	const GLint scaleLoc(glGetUniformLocation(program, "scale"));
+	const GLint locationLoc(glGetUniformLocation(program, "location"));
+
 	//ループすることで、ウィンドウを閉じないようにしている
-	while (glfwWindowShouldClose(window) == GL_FALSE)
+	while (window)
 	{
 		// ウィンドウを消去する(フレームバッファのカラーバッファ)
 		//ウィンドウの塗りつぶし
@@ -235,12 +217,18 @@ int main()
 		// ここで描画処理を行う
 		glUseProgram(program);
 
+		// uniform 変数に値を設定する
+		//glUniform1f(aspectLoc, window.getAspect());
+		glUniform2fv(sizeLoc, 1, window.getSize());
+		glUniform1f(scaleLoc, window.getScale());
+		glUniform2fv(locationLoc, 1, window.getLocation());
+
 		// 図形を描画する
 		shape->draw();
-		// カラーバッファを入れ替える（ダブルバッファリング:ちらつきを防ぐ）
-		glfwSwapBuffers(window);
-		// イベントを取り出す
-		glfwWaitEvents();
+
+		// カラーバッファを入れ替える
+		window.swapBuffers();
+
 	}
 
 	return 0;

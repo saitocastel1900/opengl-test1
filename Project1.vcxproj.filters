@@ -35,5 +35,8 @@
     <ClInclude Include="Shape.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
