@@ -6,6 +6,7 @@
 #include<memory>
 #include <GLFW/glfw3.h>
 #include"Window.h"
+#include"Matrix.h"
 #include"Shape.h"
 using namespace std;
 
@@ -157,6 +158,22 @@ constexpr Object::Vertex rectangleVertex[] =
 	{ -0.5f, 0.5f }
 };
 
+// 八面体の頂点の位置
+constexpr Object::Vertex octahedronVertex[] =
+{
+{ 0.0f, 1.0f, 0.0f },
+{ -1.0f, 0.0f, 0.0f },
+{ 0.0f, -1.0f, 0.0f },
+{ 1.0f, 0.0f, 0.0f },
+{ 0.0f, 1.0f, 0.0f },
+{ 0.0f, 0.0f, 1.0f },
+{ 0.0f, -1.0f, 0.0f },
+{ 0.0f, 0.0f, -1.0f },
+{ -1.0f, 0.0f, 0.0f },
+{ 0.0f, 0.0f, 1.0f },
+{ 1.0f, 0.0f, 0.0f },
+{ 0.0f, 0.0f, -1.0f }
+};
 
 int main()
 {
@@ -180,7 +197,7 @@ int main()
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 
 	// 図形データを作成する
-	unique_ptr<const Shape> shape(new Shape(2, 4, rectangleVertex));
+	unique_ptr<const Shape> shape(new Shape(3,12, octahedronVertex));
 
 	/*
 	static constexpr GLchar vsrc[] =
@@ -203,9 +220,11 @@ int main()
 
 	// uniform 変数の場所を取得する
 	//const GLint aspectLoc(glGetUniformLocation(program, "aspect"));
-	const GLint sizeLoc(glGetUniformLocation(program, "size"));
-	const GLint scaleLoc(glGetUniformLocation(program, "scale"));
-	const GLint locationLoc(glGetUniformLocation(program, "location"));
+	//const GLint sizeLoc(glGetUniformLocation(program, "size"));
+	//const GLint scaleLoc(glGetUniformLocation(program, "scale"));
+	//const GLint locationLoc(glGetUniformLocation(program, "location"));
+	const GLint modelviewLoc(glGetUniformLocation(program, "modelview"));
+	const GLint projectionLoc(glGetUniformLocation(program, "projection"));
 
 	//ループすることで、ウィンドウを閉じないようにしている
 	while (window)
@@ -219,9 +238,31 @@ int main()
 
 		// uniform 変数に値を設定する
 		//glUniform1f(aspectLoc, window.getAspect());
-		glUniform2fv(sizeLoc, 1, window.getSize());
-		glUniform1f(scaleLoc, window.getScale());
-		glUniform2fv(locationLoc, 1, window.getLocation());
+		//glUniform2fv(sizeLoc, 1, window.getSize());
+		//glUniform1f(scaleLoc, window.getScale());
+		//glUniform2fv(locationLoc, 1, window.getLocation());
+
+		const GLfloat* const size(window.getSize());
+		const GLfloat scale(window.getScale() * 2.0f);
+		const GLfloat fovy(window.getScale() * 0.01f);
+		const GLfloat aspect(size[0] / size[1]);
+		const Matrix projection(Matrix::perspective(fovy, aspect, 1.0f, 10.0f));
+		const Matrix scaling(Matrix::scale(scale / size[0], scale / size[1], 1.0f));
+		const GLfloat w(size[0] / scale), h(size[1] / scale);
+		//const Matrix projection(Matrix::frustum(-w, w, -h, h, 1.0f, 10.0f));
+		// 平行移動の変換行列を求める
+		const GLfloat* const position(window.getLocation());
+		const Matrix translation(Matrix::translate(position[0], position[1], 0.0f));
+		// モデル変換行列を求める
+		const Matrix model(translation * scaling);
+		// モデル変換行列を求める
+		const Matrix view(Matrix::lookat(3.0f, 4.0f, 5.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f));
+		// モデルビュー変換行列を求める
+		const Matrix modelview(view * model);
+		// uniform 変数に値を設定する
+		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, projection.data());
+		glUniformMatrix4fv(modelviewLoc, 1, GL_FALSE, modelview.data());
 
 		// 図形を描画する
 		shape->draw();
