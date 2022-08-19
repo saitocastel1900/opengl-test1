@@ -38,5 +38,8 @@
     <ClInclude Include="Window.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Matrix.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

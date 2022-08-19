@@ -13,7 +13,7 @@ public:
 	struct Vertex
 	{
 		// 位置情報(x,y)
-		GLfloat position[2];
+		GLfloat position[3];
 	};
 	// コンストラクタ
 	// size: 頂点の位置の次元
